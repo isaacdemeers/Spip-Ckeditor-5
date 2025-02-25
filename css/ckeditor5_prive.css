@@ -1,0 +1,15 @@
+/* Styles basiques pour CKEditor 5 */
+.ck-editor__editable {
+    min-height: 300px;
+    border: 1px solid #ddd;
+}
+
+/* Meilleure intégration avec l'interface SPIP */
+.formulaire_spip .ck.ck-editor {
+    width: 100%;
+}
+
+/* Indicateur visuel quand CKEditor est chargé */
+.ckeditor-loaded {
+    border-left: 3px solid #8cc84b !important;
+}
