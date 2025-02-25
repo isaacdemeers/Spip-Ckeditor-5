@@ -10,15 +10,11 @@ if (!defined('_ECRIRE_INC_VERSION')) {
  * @return string Le contenu HTML modifié
  */
 function ckeditor5_insert_head($flux) {
-    $flux .= '<link rel="stylesheet" href="' . find_in_path('lib/ckeditor/ckeditor5.css') . '" />';
-    $flux .= '<script type="importmap">
-    {
-        "imports": {
-            "ckeditor5": "' . find_in_path('lib/ckeditor/ckeditor5.js') . '",
-            "ckeditor5/": "' . dirname(find_in_path('lib/ckeditor/ckeditor5.js')) . '/"
-        }
-    }
-    </script>';
+    // Utiliser la version CDN de CKEditor pour tester
+    $flux .= "<!-- Début des ressources CKEditor 5 (CDN) -->\n";
+    $flux .= '<link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.css" />';
+    $flux .= '<script src="https://cdn.ckeditor.com/ckeditor5/36.0.1/classic/ckeditor.js"></script>';
+    $flux .= "<!-- Fin des ressources CKEditor 5 -->\n";
     
     return $flux;
 }
@@ -52,6 +48,10 @@ function ckeditor5_insert_head_css($flux) {
         .markItUpPreview, .markItUpTabs {
             display: none !important;
         }
+        /* Masquer le textarea original une fois CKEditor chargé */
+        .ck-editor + textarea {
+            display: none;
+        }
     </style>';
     
     return $flux . $styles;
@@ -64,7 +64,16 @@ function ckeditor5_insert_head_css($flux) {
  * @return string Le contenu HTML modifié
  */
 function ckeditor5_insert_foot($flux) {
-    $flux .= '<script type="module" src="' . find_in_path('js/ckeditor5_init.js') . '"></script>';
+    $ckeditor_init_js = find_in_path('js/ckeditor5_init.js');
+    
+    if ($ckeditor_init_js) {
+        $flux .= "<!-- Initialisation de CKEditor 5 -->\n";
+        $flux .= '<script src="' . $ckeditor_init_js . '"></script>';
+        $flux .= "<!-- Fin de l'initialisation de CKEditor 5 -->\n";
+    } else {
+        $flux .= "<!-- ERREUR: Script d'initialisation CKEditor non trouvé! -->\n";
+    }
+    
     return $flux;
 }
 
@@ -95,16 +104,40 @@ function ckeditor5_affichage_final($flux) {
                 <textarea id="text_area" name="' . $textareaName . '" class="editor">' . $textareaContent . '</textarea>
                 ' . $menuBarDiv . '
                 ' . $wordCountDiv . '
+                <div id="ckeditor-debug" style="color: #999; font-size: 11px; margin-top: 5px;">CKEditor 5 en cours de chargement...</div>
             </div>';
             
             $flux = preg_replace($pattern, $replacement, $flux);
         }
         
-        // Ajoute le script d'initialisation juste avant la fermeture du body
-        if (strpos($flux, '</body>') !== false && strpos($flux, 'ckeditor5_init.js') === false) {
-            $scriptTag = '<script type="module" src="' . find_in_path('js/ckeditor5_init.js') . '"></script>';
-            $flux = str_replace('</body>', $scriptTag . '</body>', $flux);
-        }
+        // Ajoute un script d'initialisation directement dans la page
+        $init_script = '<script>
+            document.addEventListener("DOMContentLoaded", function() {
+                console.log("Vérification de l\'éditeur dans la page");
+                if (typeof ClassicEditor !== "undefined") {
+                    console.log("ClassicEditor est disponible, tentative d\'initialisation directe");
+                    setTimeout(function() {
+                        var textarea = document.getElementById("text_area");
+                        if (textarea) {
+                            ClassicEditor.create(textarea, {
+                                toolbar: ["bold", "italic", "link"]
+                            }).then(function(editor) {
+                                console.log("Éditeur initialisé avec succès via script inline");
+                            }).catch(function(error) {
+                                console.error("Erreur lors de l\'initialisation:", error);
+                            });
+                        } else {
+                            console.error("Textarea non trouvé");
+                        }
+                    }, 500);
+                } else {
+                    console.error("ClassicEditor n\'est pas disponible");
+                }
+            });
+        </script>';
+        
+        // Insérer le script juste avant la fermeture du body
+        $flux = str_replace('</body>', $init_script . '</body>', $flux);
     }
     
     return $flux;
@@ -118,22 +151,24 @@ function ckeditor5_affichage_final($flux) {
  */
 function ckeditor5_header_prive($flux) {
     // Ajoute un script pour désactiver MarkItUp et autres scripts SPIP qui causent des conflits
-    $script = '<script type="text/javascript">
+    $script = '<script>
         document.addEventListener("DOMContentLoaded", function() {
+            console.log("Désactivation des scripts SPIP conflictuels");
             // Désactive l\'initialisation de MarkItUp
             if (typeof jQuery !== "undefined") {
                 // Désactive les fonctions qui causent des erreurs
-                jQuery.fn.markItUp = function() { return this; };
-                jQuery.fn.previsu_spip = function() { return this; };
-                jQuery.fn.barre_previsualisation = function() { return this; };
+                jQuery.fn.markItUp = function() { console.log("markItUp désactivé"); return this; };
+                jQuery.fn.previsu_spip = function() { console.log("previsu_spip désactivé"); return this; };
+                jQuery.fn.barre_previsualisation = function() { console.log("barre_previsualisation désactivé"); return this; };
                 
                 // Empêche l\'exécution de la fonction barrebouilles
-                window.barrebouilles = function() { return; };
+                window.barrebouilles = function() { console.log("barrebouilles désactivé"); return; };
                 
                 // Supprime les gestionnaires d\'événements sur le textarea
                 setTimeout(function() {
                     if (jQuery("#text_area").length) {
                         jQuery("#text_area").off();
+                        console.log("Événements désactivés sur #text_area");
                     }
                 }, 100);
             }

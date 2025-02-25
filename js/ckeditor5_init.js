@@ -277,60 +277,87 @@ const editorConfig = {
     }
 };
 
-// Initialisation de l'éditeur pour tous les éléments avec la classe 'editor'
-document.addEventListener('DOMContentLoaded', () => {
-    // Attendre un court instant pour s'assurer que les scripts SPIP sont désactivés
-    setTimeout(() => {
-        // Cibler spécifiquement les textareas dans l'interface SPIP
-        document.querySelectorAll('textarea.editor, #text_area').forEach((element, index) => {
-            // S'assurer que l'élément existe encore dans le DOM
-            if (!element || !document.body.contains(element)) {
-                console.warn("L'élément textarea n'existe plus dans le DOM");
-                return;
-            }
+// Script d'initialisation simplifié pour CKEditor 5
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("Script d'initialisation CKEditor chargé");
 
-            // Conserver une référence à la valeur originale
-            let originalContent = element.value;
+    // Vérifier si CKEditor est disponible
+    if (typeof ClassicEditor === 'undefined') {
+        console.error("ClassicEditor n'est pas disponible. Vérifiez que le script CKEditor est correctement chargé.");
+        document.getElementById('ckeditor-debug').textContent = "Erreur: CKEditor n'est pas disponible";
+        document.getElementById('ckeditor-debug').style.color = "red";
+        return;
+    }
 
-            // Créer l'éditeur
-            ClassicEditor.create(element, editorConfig)
-                .then(editor => {
-                    // Ajout du compteur de mots si l'élément existe
-                    const wordCountElement = document.querySelector('#editor-word-count');
-                    if (wordCountElement) {
-                        const wordCount = editor.plugins.get('WordCount');
-                        wordCountElement.appendChild(wordCount.wordCountContainer);
+    // Configuration de base pour l'éditeur
+    var editorConfig = {
+        toolbar: {
+            items: [
+                'heading',
+                '|',
+                'bold',
+                'italic',
+                'link',
+                'bulletedList',
+                'numberedList',
+                '|',
+                'outdent',
+                'indent',
+                '|',
+                'imageUpload',
+                'blockQuote',
+                'insertTable',
+                'undo',
+                'redo'
+            ]
+        },
+        language: 'fr'
+    };
+
+    // Initialiser l'éditeur
+    setTimeout(function () {
+        var textarea = document.getElementById('text_area');
+        if (textarea) {
+            console.log("Tentative d'initialisation de CKEditor sur #text_area");
+
+            ClassicEditor
+                .create(textarea, editorConfig)
+                .then(function (editor) {
+                    console.log("CKEditor initialisé avec succès");
+
+                    // Mettre à jour le message de débogage
+                    var debugElement = document.getElementById('ckeditor-debug');
+                    if (debugElement) {
+                        debugElement.textContent = "CKEditor 5 chargé avec succès!";
+                        setTimeout(function () {
+                            debugElement.style.display = 'none';
+                        }, 3000);
                     }
 
-                    // Ajout de la barre de menu si l'élément existe
-                    const menuBarElement = document.querySelector('#editor-menu-bar');
-                    if (menuBarElement && editor.ui.view.menuBarView) {
-                        menuBarElement.appendChild(editor.ui.view.menuBarView.element);
-                    }
-
-                    // Intercepter la soumission du formulaire pour convertir le contenu CKEditor en format SPIP
-                    const form = element.closest('form');
+                    // Intercepter la soumission du formulaire
+                    var form = textarea.closest('form');
                     if (form) {
-                        form.addEventListener('submit', () => {
-                            // Récupérer le contenu de l'éditeur et le mettre dans le textarea original
-                            element.value = editor.getData();
+                        form.addEventListener('submit', function () {
+                            textarea.value = editor.getData();
+                            console.log("Formulaire soumis, contenu mis à jour");
                         });
                     }
-
-                    // Stockage de l'instance de l'éditeur dans une variable globale
-                    if (!window.ckeditorInstances) {
-                        window.ckeditorInstances = [];
-                    }
-                    window.ckeditorInstances.push(editor);
-
-                    return editor;
                 })
-                .catch(error => {
-                    console.error(`Erreur lors de l'initialisation de l'éditeur ${index}:`, error);
-                    // En cas d'erreur, restaurer le textarea original avec son contenu
-                    element.style.display = 'block';
-                    element.value = originalContent;
+                .catch(function (error) {
+                    console.error("Erreur lors de l'initialisation de CKEditor:", error);
+
+                    // Mettre à jour le message de débogage
+                    var debugElement = document.getElementById('ckeditor-debug');
+                    if (debugElement) {
+                        debugElement.textContent = "Erreur lors du chargement de CKEditor 5: " + error.message;
+                        debugElement.style.color = "red";
+                    }
+
+                    // Restaurer le textarea original
+                    textarea.style.display = 'block';
                 });
-        });
-    }, 200); // Délai de 200ms pour s'assurer que les scripts SPIP sont désactivés
+        } else {
+            console.error("Textarea #text_area non trouvé dans le document");
+        }
+    }, 300);
 });
