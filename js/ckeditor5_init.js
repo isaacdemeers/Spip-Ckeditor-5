@@ -44,11 +44,9 @@ function initializeEditor() {
         LinkImage,
         List,
         ListProperties,
-        Markdown,
         MediaEmbed,
         Mention,
         Paragraph,
-        PasteFromMarkdownExperimental,
         PasteFromOffice,
         RemoveFormat,
         SimpleUploadAdapter,
@@ -126,11 +124,9 @@ function initializeEditor() {
             LinkImage,
             List,
             ListProperties,
-            Markdown,
             MediaEmbed,
             Mention,
             Paragraph,
-            PasteFromMarkdownExperimental,
             PasteFromOffice,
             RemoveFormat,
             SimpleUploadAdapter,
@@ -267,40 +263,21 @@ function initializeEditor() {
 
         ClassicEditor.create(element, editorConfig)
             .then(editor => {
-                // If the textarea was empty, we can set some placeholder content
-                if (!originalContent.trim()) {
-                    editor.setData('<p>Saisissez votre texte ici...</p>');
-                }
-
                 // Store the editor instance for later use
                 element.ckeditorInstance = editor;
 
-                // Synchronize editor content with textarea on change
-                editor.model.document.on('change:data', () => {
-                    element.value = editor.getData();
-                });
+                // Initialiser la conversion SPIP si le convertisseur est disponible
+                if (window.SpipConverter) {
+                    window.SpipConverter.initForTextarea(element, editor);
+                } else {
+                    // Fallback si le convertisseur n'est pas disponible
+                    if (!originalContent.trim()) {
+                        editor.setData('<p>Saisissez votre texte ici...</p>');
+                    }
 
-                // Find the closest form and add event listeners to all submit buttons
-                const form = element.closest('form');
-                if (form) {
-                    // Find all submit buttons in the form
-                    const submitButtons = form.querySelectorAll('input[type="submit"], button[type="submit"]');
-                    submitButtons.forEach(button => {
-                        button.addEventListener('click', () => {
-                            // Update the textarea with the current editor content
-                            element.value = editor.getData();
-                            console.log('Textarea updated before submit:', element.value);
-                        });
-                    });
-
-                    // Also find any buttons with class .submit or .save
-                    const saveButtons = form.querySelectorAll('.submit, .save, .bouton_action_post');
-                    saveButtons.forEach(button => {
-                        button.addEventListener('click', () => {
-                            // Update the textarea with the current editor content
-                            element.value = editor.getData();
-                            console.log('Textarea updated before save:', element.value);
-                        });
+                    // Synchronize editor content with textarea on change
+                    editor.model.document.on('change:data', () => {
+                        element.value = editor.getData();
                     });
                 }
 
