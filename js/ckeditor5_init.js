@@ -275,6 +275,35 @@ function initializeEditor() {
                 // Store the editor instance for later use
                 element.ckeditorInstance = editor;
 
+                // Synchronize editor content with textarea on change
+                editor.model.document.on('change:data', () => {
+                    element.value = editor.getData();
+                });
+
+                // Find the closest form and add event listeners to all submit buttons
+                const form = element.closest('form');
+                if (form) {
+                    // Find all submit buttons in the form
+                    const submitButtons = form.querySelectorAll('input[type="submit"], button[type="submit"]');
+                    submitButtons.forEach(button => {
+                        button.addEventListener('click', () => {
+                            // Update the textarea with the current editor content
+                            element.value = editor.getData();
+                            console.log('Textarea updated before submit:', element.value);
+                        });
+                    });
+
+                    // Also find any buttons with class .submit or .save
+                    const saveButtons = form.querySelectorAll('.submit, .save, .bouton_action_post');
+                    saveButtons.forEach(button => {
+                        button.addEventListener('click', () => {
+                            // Update the textarea with the current editor content
+                            element.value = editor.getData();
+                            console.log('Textarea updated before save:', element.value);
+                        });
+                    });
+                }
+
                 console.log("Editor initialized successfully for:", element);
                 return editor;
             })
@@ -338,13 +367,14 @@ function initCKEditorOnPage() {
 document.addEventListener('DOMContentLoaded', function () {
     initCKEditorOnPage();
 
-    // Update textareas before form submission
+    // Update textareas before form submission (keep this as a fallback)
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', function () {
             document.querySelectorAll('textarea').forEach(textarea => {
                 if (textarea.ckeditorInstance) {
                     // Update the textarea with the current editor content
                     textarea.value = textarea.ckeditorInstance.getData();
+                    console.log('Textarea updated on form submit:', textarea.value);
                 }
             });
         });
