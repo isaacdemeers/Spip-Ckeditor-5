@@ -254,11 +254,14 @@ function initializeEditor() {
         translations: CKEditorTranslations ? [CKEditorTranslations] : []
     };
 
-    // Find all textareas and initialize CKEditor on them
-    let textareas = document.querySelectorAll('textarea');
+    // Find all textareas that haven't been initialized yet
+    let textareas = document.querySelectorAll('textarea:not([data-ckeditor-initialized])');
     console.log("Found textareas:", textareas);
 
     textareas.forEach(element => {
+        // Mark this textarea as being processed
+        element.setAttribute('data-ckeditor-initialized', 'true');
+
         // Get the original content from the textarea
         const originalContent = element.value;
 
@@ -276,12 +279,15 @@ function initializeEditor() {
                 return editor;
             })
             .catch(error => {
+                // If initialization fails, remove the marker so we can try again
+                element.removeAttribute('data-ckeditor-initialized');
                 console.error('CKEditor initialization error:', error);
             });
     });
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+// Function to initialize CKEditor on the page
+function initCKEditorOnPage() {
     console.log("CKEditor 5 initialization started");
 
     if (typeof jQuery !== "undefined") {
@@ -326,6 +332,11 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(error => {
             console.error("Error loading CKEditor:", error);
         });
+}
+
+// Initialize on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function () {
+    initCKEditorOnPage();
 
     // Update textareas before form submission
     document.querySelectorAll('form').forEach(form => {
@@ -338,4 +349,27 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     });
+
+    // Handle SPIP AJAX navigation if jQuery is available
+    if (typeof jQuery !== "undefined") {
+        jQuery(document).on('ajaxComplete', function (event, xhr, settings) {
+            // Check if there are textareas without CKEditor instances
+            const textareas = document.querySelectorAll('textarea:not([data-ckeditor-initialized])');
+            if (textareas.length > 0) {
+                console.log("Found new textareas after AJAX, initializing CKEditor");
+                initCKEditorOnPage();
+            }
+        });
+    }
 });
+
+// For SPIP's prive.js ajax_reload_page function
+if (window.jQuery) {
+    jQuery(document).on('spip:loaded', function () {
+        console.log("SPIP loaded event detected, checking for textareas");
+        const textareas = document.querySelectorAll('textarea:not([data-ckeditor-initialized])');
+        if (textareas.length > 0) {
+            initCKEditorOnPage();
+        }
+    });
+}
