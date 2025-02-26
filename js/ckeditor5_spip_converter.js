@@ -112,35 +112,47 @@ const SpipConverter = {
             html += listItems.join('') + '</ul>';
         }
 
-        // Traitement des tableaux SPIP
-        // Recherche des tableaux avec titre et description
-        html = html.replace(/\|\|([^\|]*?)\|([^\|]*?)\|\|[\s\n]*(\|[^\n]*\|[\s\n]*)+/g, function (match) {
-            const lines = match.split('\n');
-            const headerLine = lines[0];
-            const [_, title, description] = headerLine.match(/\|\|([^\|]*?)\|([^\|]*?)\|\|/) || [null, '', ''];
+        // Traitement amélioré des tableaux SPIP
+        html = html.replace(/\|\|(.*?)(?:\|(.*?))?\|\|[\s\n]*((?:\|.*\|[\s\n]*)+)/g, function (match, title, description, tableRows) {
+            title = title || '';
+            description = description || '';
 
             let tableHTML = '<table class="spip">\n';
-            tableHTML += `<caption>${title}<br>${description}</caption>\n`;
+
+            // Ajouter le titre et la description si présents
+            if (title.trim() || description.trim()) {
+                tableHTML += `<caption>${title.trim()}`;
+                if (description.trim()) {
+                    tableHTML += `<br>${description.trim()}`;
+                }
+                tableHTML += '</caption>\n';
+            }
 
             // Traiter les lignes du tableau
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line || !line.includes('|')) continue;
+            const rows = tableRows.trim().split('\n');
 
-                const cells = line.split('|').filter(cell => cell !== '');
+            rows.forEach(row => {
+                if (!row.trim() || !row.includes('|')) return;
+
                 tableHTML += '<tr>\n';
+
+                // Diviser la ligne en cellules
+                const cells = row.split('|').filter(cell => cell !== '');
 
                 cells.forEach(cell => {
                     const cellContent = cell.trim();
-                    if (cellContent.startsWith('{{') && cellContent.endsWith('}}')) {
+
+                    // Vérifier si c'est une cellule d'en-tête (contenu entre {{ }})
+                    const headerMatch = cellContent.match(/^\s*\{\{(.*?)\}\}\s*$/);
+
+                    if (headerMatch) {
                         // Cellule d'en-tête
-                        const headerContent = cellContent.substring(2, cellContent.length - 2);
-                        tableHTML += `  <th>${headerContent}</th>\n`;
+                        tableHTML += `  <th>${headerMatch[1]}</th>\n`;
                     } else if (cellContent === '<') {
-                        // Fusion avec la cellule de gauche (ignorée car gérée avec la cellule précédente)
+                        // Fusion avec la cellule de gauche (ignorée)
                         tableHTML += '';
                     } else if (cellContent === '^') {
-                        // Fusion avec la cellule du dessus (ignorée car gérée avec la cellule précédente)
+                        // Fusion avec la cellule du dessus (ignorée)
                         tableHTML += '';
                     } else {
                         // Cellule normale
@@ -149,7 +161,7 @@ const SpipConverter = {
                 });
 
                 tableHTML += '</tr>\n';
-            }
+            });
 
             tableHTML += '</table>';
             return tableHTML;
@@ -264,42 +276,69 @@ const SpipConverter = {
             }).join('\n');
         });
 
-        // Conversion des tableaux HTML en SPIP
-        spipText = spipText.replace(/<table[^>]*>[\s\S]*?<caption>([\s\S]*?)<br>([\s\S]*?)<\/caption>([\s\S]*?)<\/table>/gi,
-            function (match, title, description, tableContent) {
-                let spipTable = `||${title}|${description}||\n`;
+        // Conversion des tableaux HTML en SPIP - Version améliorée
+        spipText = spipText.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, function (match, tableContent) {
+            let spipTable = '';
+            let hasCaption = false;
+            let title = '';
+            let description = '';
 
-                // Extraire les lignes du tableau
-                const rows = tableContent.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
-                if (!rows) return match;
+            // Extraire le titre et la description si présents
+            const captionMatch = tableContent.match(/<caption[^>]*>([\s\S]*?)<\/caption>/i);
+            if (captionMatch) {
+                hasCaption = true;
+                const captionContent = captionMatch[1];
+                const brMatch = captionContent.match(/(.*?)<br\s*\/?>(.*)/i);
 
-                rows.forEach(row => {
-                    spipTable += '|';
+                if (brMatch) {
+                    title = brMatch[1].trim();
+                    description = brMatch[2].trim();
+                } else {
+                    title = captionContent.trim();
+                }
 
-                    // Extraire les cellules
-                    const headerCells = row.match(/<th[^>]*>([\s\S]*?)<\/th>/gi);
-                    const dataCells = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+                spipTable = `||${title}|${description}||\n`;
 
-                    if (headerCells) {
-                        headerCells.forEach(cell => {
-                            const content = cell.replace(/<th[^>]*>([\s\S]*?)<\/th>/gi, '$1').trim();
-                            spipTable += ` {{${content}}} |`;
-                        });
-                    }
-
-                    if (dataCells) {
-                        dataCells.forEach(cell => {
-                            const content = cell.replace(/<td[^>]*>([\s\S]*?)<\/td>/gi, '$1').trim();
-                            spipTable += ` ${content} |`;
-                        });
-                    }
-
-                    spipTable += '\n';
-                });
-
-                return spipTable;
+                // Supprimer la caption du contenu pour éviter de la traiter deux fois
+                tableContent = tableContent.replace(/<caption[^>]*>[\s\S]*?<\/caption>/i, '');
+            } else {
+                // Tableau sans titre
+                spipTable = "||\n";
             }
-        );
+
+            // Extraire les lignes du tableau
+            const rows = tableContent.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+            if (!rows) return match;
+
+            rows.forEach(row => {
+                spipTable += '|';
+
+                // Extraire les cellules d'en-tête
+                const headerCells = row.match(/<th[^>]*>([\s\S]*?)<\/th>/gi);
+                if (headerCells && headerCells.length > 0) {
+                    headerCells.forEach(cell => {
+                        const content = cell.replace(/<th[^>]*>([\s\S]*?)<\/th>/gi, '$1').trim();
+                        spipText = spipText.replace(/<[^>]+>/g, ''); // Nettoyer les balises HTML dans le contenu
+                        spipTable += ` {{${content}}} |`;
+                    });
+                }
+
+                // Extraire les cellules de données
+                const dataCells = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+                if (dataCells && dataCells.length > 0) {
+                    dataCells.forEach(cell => {
+                        const content = cell.replace(/<td[^>]*>([\s\S]*?)<\/td>/gi, '$1').trim();
+                        // Nettoyer les balises HTML dans le contenu
+                        const cleanContent = content.replace(/<[^>]+>/g, '');
+                        spipTable += ` ${cleanContent} |`;
+                    });
+                }
+
+                spipTable += '\n';
+            });
+
+            return spipTable;
+        });
 
         // Conversion des citations
         spipText = spipText.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, '<quote>$1</quote>');
