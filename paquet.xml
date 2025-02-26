@@ -11,10 +11,6 @@
     <auteur>Votre Nom</auteur>
     <licence>GPL v3</licence>
     
-    <pipeline nom="insert_head" inclure="ckeditor5_pipelines.php" />
-    <pipeline nom="insert_head_css" inclure="ckeditor5_pipelines.php" />
-    <pipeline nom="insert_foot" inclure="ckeditor5_pipelines.php" />
-    <pipeline nom="affichage_final" inclure="ckeditor5_pipelines.php" />
     <pipeline nom="header_prive" inclure="ckeditor5_pipelines.php" />
     
     <necessite nom="spip" compatibilite="[3.0.0;4.*]" />
