@@ -36,10 +36,10 @@ const SpipConverter = {
         // Puis traiter les titres standards
         html = html.replace(/\{\{\{([^{}*][^{}]*?)\}\}\}/g, '<h1>$1</h1>');
 
-        // Ancienne syntaxe des titres (au cas où)
-        html = html.replace(/{\*\*\*(.*?)\*\*\*}/g, '<h3>$1</h3>');
-        html = html.replace(/{\*\*(.*?)\*\*}/g, '<h2>$1</h2>');
-        html = html.replace(/{\*(.*?)\*}/g, '<h1>$1</h1>');
+        // // Ancienne syntaxe des titres (au cas où)
+        // html = html.replace(/{\*\*\*(.*?)\*\*\*}/g, '<h3>$1</h3>');
+        // html = html.replace(/{\*\*(.*?)\*\*}/g, '<h2>$1</h2>');
+        // html = html.replace(/{\*(.*?)\*}/g, '<h1>$1</h1>');
 
         // Conversion des styles de texte SPIP
         // {{texte}} = gras
@@ -167,9 +167,6 @@ const SpipConverter = {
             return tableHTML;
         });
 
-        // Traitement des citations
-        // <quote>texte</quote> = blockquote
-        html = html.replace(/<quote>([\s\S]*?)<\/quote>/gi, '<blockquote>$1</blockquote>');
 
         // Traitement de la poésie
         // <poesie>texte</poesie> = pre avec class="spip_poesie"
@@ -186,6 +183,9 @@ const SpipConverter = {
         html = html.replace(/\[\/([\s\S]*?)\/\]/g, '<div style="text-align:right">$1</div>');
         // [(texte)] = paragraphe encadré
         html = html.replace(/\[\(([\s\S]*?)\)\]/g, '<div class="spip_encadrer">$1</div>');
+
+        // Conversion des citations (blockquote)
+        // html = html.replace(/\n<blockquote>([\s\S]*?)<\/blockquote>\n/g, '<blockquote class="spip"><p>$1</p></blockquote>');
 
         // Restaurer les balises HTML
         html = html.replace(/##HTML_TAG_(\d+)##/g, function (match, index) {
@@ -250,6 +250,9 @@ const SpipConverter = {
         spipText = spipText.replace(/<mark[^>]*>(.*?)<\/mark>/gi, '[*$1*]');
         spipText = spipText.replace(/<del[^>]*>(.*?)<\/del>/gi, '[-$1-]');
         spipText = spipText.replace(/<s[^>]*>(.*?)<\/s>/gi, '[-$1-]');
+
+        // spipText = spipText.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '<blockquote>$1</blockquote>');
+
 
         // Conversion des liens HTML en SPIP
         spipText = spipText.replace(/<a[^>]*href="([^"]*?)"[^>]*title="([^"]*?)"[^>]*>(.*?)<\/a>/gi, '[$3|$2->$1]');
@@ -339,8 +342,6 @@ const SpipConverter = {
             return spipTable;
         });
 
-        // Conversion des citations
-        spipText = spipText.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, '<quote>$1</quote>');
 
         // Conversion des poésies et cadres
         spipText = spipText.replace(/<pre[^>]*class="spip_poesie"[^>]*>([\s\S]*?)<\/pre>/gi, '<poesie>$1</poesie>');
@@ -350,6 +351,10 @@ const SpipConverter = {
         spipText = spipText.replace(/<div[^>]*style="text-align:center"[^>]*>([\s\S]*?)<\/div>/gi, '[|$1|]');
         spipText = spipText.replace(/<div[^>]*style="text-align:right"[^>]*>([\s\S]*?)<\/div>/gi, '[/$1/]');
         spipText = spipText.replace(/<div[^>]*class="spip_encadrer"[^>]*>([\s\S]*?)<\/div>/gi, '[($1)]');
+
+        // Conversion des blockquotes en SPIP
+        // spipText = spipText.replace(/<blockquote[^>]*class="spip"[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>\s*<\/blockquote>/gi, '\n<blockquote>$1</blockquote>\n');
+        // spipText = spipText.replace(/<blockquote[^>]*>\s*<p[^>]*>([\s\S]*?)<\/p>\s*<\/blockquote>/gi, '\n<blockquote>$1</blockquote>\n');
 
         // Conversion des caractères spéciaux HTML en SPIP
         spipText = spipText.replace(/→/g, '-->');
