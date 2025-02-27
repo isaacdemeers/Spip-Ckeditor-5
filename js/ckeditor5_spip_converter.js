@@ -318,8 +318,8 @@ const SpipConverter = {
                 if (headerCells && headerCells.length > 0) {
                     headerCells.forEach(cell => {
                         const content = cell.replace(/<th[^>]*>([\s\S]*?)<\/th>/gi, '$1').trim();
-                        spipText = spipText.replace(/<[^>]+>/g, ''); // Nettoyer les balises HTML dans le contenu
-                        spipTable += ` {{${content}}} |`;
+                        const cleanContent = content.replace(/<[^>]+>/g, '');
+                        spipTable += ` {{${cleanContent}}} |`;
                     });
                 }
 
@@ -328,7 +328,6 @@ const SpipConverter = {
                 if (dataCells && dataCells.length > 0) {
                     dataCells.forEach(cell => {
                         const content = cell.replace(/<td[^>]*>([\s\S]*?)<\/td>/gi, '$1').trim();
-                        // Nettoyer les balises HTML dans le contenu
                         const cleanContent = content.replace(/<[^>]+>/g, '');
                         spipTable += ` ${cleanContent} |`;
                     });
