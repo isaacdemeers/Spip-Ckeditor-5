@@ -280,6 +280,43 @@ const SpipConverter = {
         });
 
         // Conversion des tableaux HTML en SPIP - Version améliorée
+        spipText = spipText.replace(/<figure[^>]*class="table"[^>]*>[\s\S]*?<table[^>]*>([\s\S]*?)<\/table>[\s\S]*?<\/figure>/gi, function (match, tableContent) {
+            let spipTable = '';
+
+            // Extraire les lignes du tableau
+            const rows = tableContent.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+            if (!rows) return match;
+
+            rows.forEach(row => {
+                spipTable += '|';
+
+                // Extraire les cellules d'en-tête
+                const headerCells = row.match(/<th[^>]*>([\s\S]*?)<\/th>/gi);
+                if (headerCells && headerCells.length > 0) {
+                    headerCells.forEach(cell => {
+                        const content = cell.replace(/<th[^>]*>([\s\S]*?)<\/th>/gi, '$1').trim();
+                        const cleanContent = content.replace(/<[^>]+>/g, '');
+                        spipTable += ` {{${cleanContent}}} |`;
+                    });
+                }
+
+                // Extraire les cellules de données
+                const dataCells = row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi);
+                if (dataCells && dataCells.length > 0) {
+                    dataCells.forEach(cell => {
+                        const content = cell.replace(/<td[^>]*>([\s\S]*?)<\/td>/gi, '$1').trim();
+                        const cleanContent = content.replace(/<[^>]+>/g, '');
+                        spipTable += ` ${cleanContent} |`;
+                    });
+                }
+
+                spipTable += '\n';
+            });
+
+            return spipTable;
+        });
+
+        // Gérer aussi les tableaux sans figure (au cas où)
         spipText = spipText.replace(/<table[^>]*>([\s\S]*?)<\/table>/gi, function (match, tableContent) {
             let spipTable = '';
             let hasCaption = false;
