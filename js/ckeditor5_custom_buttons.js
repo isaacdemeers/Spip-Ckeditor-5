@@ -22,8 +22,6 @@ const CustomButtons = {
 
                 // Ajouter un gestionnaire d'événements au bouton
                 customButton.addEventListener('click', () => {
-                    console.log('Le bouton dans la barre d\'outils a été cliqué!');
-                    alert('Message envoyé dans la console! Ouvrez les outils de développement pour le voir.');
 
                     // Insérer un texte dans cet éditeur spécifique
                     const now = new Date();
@@ -35,7 +33,6 @@ const CustomButtons = {
                 // Ajouter le bouton à la barre d'outils
                 toolbarItemsContainer.appendChild(customButton);
 
-                console.log('Bouton ajouté à la barre d\'outils avec succès!');
             }
         }, 500);
     }
