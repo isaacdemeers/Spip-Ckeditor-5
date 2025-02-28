@@ -75,6 +75,7 @@ function initializeEditor() {
     const editorConfig = {
         toolbar: {
             items: [
+                // Première ligne avec les outils standards
                 'sourceEditing',
                 '|',
                 'heading',
@@ -91,9 +92,14 @@ function initializeEditor() {
                 'numberedList',
                 'todoList',
                 'outdent',
-                'indent'
+                'indent',
+                // Séparation entre les lignes
+                '|',
+                '-',  // Crée un saut de ligne dans la barre d'outils
+                // Boutons personnalisés sur la deuxième ligne
+                'addTestButton'
             ],
-            shouldNotGroupWhenFull: false
+            shouldNotGroupWhenFull: true
         },
         plugins: [
             Autoformat,
