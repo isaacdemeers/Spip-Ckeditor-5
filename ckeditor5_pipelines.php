@@ -12,6 +12,7 @@ function ckeditor5_header_prive($flux) {
     $ckeditor_translations_js = find_in_path('lib/ckeditor/translations/fr.js');
     $ckeditor_css = find_in_path('lib/ckeditor/ckeditor5.css');
     $converter_js = find_in_path('js/ckeditor5_spip_converter.js');
+    $custom_buttons_js = find_in_path('js/ckeditor5_custom_buttons.js');
     $init_js = find_in_path('js/ckeditor5_init.js');
     
     // Set the paths for CKEditor and translations
@@ -23,6 +24,9 @@ function ckeditor5_header_prive($flux) {
     
     // Load the SPIP converter script first
     $flux .= '<script src="' . url_absolue($converter_js) . '"></script>';
+    
+    // Load the custom buttons script
+    $flux .= '<script src="' . url_absolue($custom_buttons_js) . '"></script>';
     
     // Load the initialization script
     $flux .= '<script type="module" src="' . url_absolue($init_js) . '"></script>';
